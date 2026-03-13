@@ -78,7 +78,7 @@ export function AssistantCard({ assistant, onHide, onRestore, isHidden = false }
           orgName={orgName}
           isInCall={isInCall && !isHidden}
           orgColor={orgColor}
-          size={120}
+          size={64}
         />
       </div>
 
