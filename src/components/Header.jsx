@@ -1,6 +1,6 @@
 export function Header({
   stats, lastUpdate, isLoading, onRefresh,
-  hiddenCount, showHidden, onToggleShowHidden, onRestoreAll
+  hiddenCount, hideNoCalls, onToggleHideNoCalls
 }) {
   const formatTime = (isoStr) => {
     if (!isoStr) return '--:--:--'
@@ -36,29 +36,21 @@ export function Header({
       </div>
 
       <div className="header-right">
-        {/* Controles de agentes ocultos */}
-        {hiddenCount > 0 ? (
-          <div className="hidden-controls">
-            <button
-              className={`toggle-btn ${showHidden ? 'active' : ''}`}
-              onClick={onToggleShowHidden}
-              title={showHidden ? 'Esconder os ocultos' : 'Ver agentes ocultos'}
-            >
-              <span className="toggle-icon">👁</span>
-              <span className="toggle-label">
-                {showHidden ? 'Esconder' : `Ver ocultos`}
-              </span>
-              <span className="hidden-badge">{hiddenCount}</span>
-            </button>
-            <button
-              className="restore-btn"
-              onClick={onRestoreAll}
-              title="Restaurar todos os agentes"
-            >
-              Restaurar todos
-            </button>
-          </div>
-        ) : null}
+        {/* Toggle: ocultar agentes sem histórico */}
+        <button
+          className={`toggle-btn ${hideNoCalls ? 'active' : ''}`}
+          onClick={onToggleHideNoCalls}
+          title={hideNoCalls
+            ? `Exibir ${hiddenCount} agente(s) sem histórico`
+            : 'Ocultar agentes sem nenhuma chamada registrada'}
+        >
+          <span className="toggle-icon">{hideNoCalls ? '👁' : '🙈'}</span>
+          <span className="toggle-label">
+            {hideNoCalls
+              ? `Sem histórico (${hiddenCount})`
+              : 'Sem histórico'}
+          </span>
+        </button>
 
         <div className="update-info">
           <span className="update-label">Atualizado às</span>

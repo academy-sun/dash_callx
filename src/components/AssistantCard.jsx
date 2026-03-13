@@ -38,33 +38,19 @@ function formatCallDuration(call) {
   return `${min}:${sec.toString().padStart(2, '0')}`
 }
 
-export function AssistantCard({ assistant, onHide, onRestore, isHidden = false }) {
+export function AssistantCard({ assistant }) {
   const { name, orgName, orgColor, isInCall, currentCall, lastCall } = assistant
 
   const lastCallDate = getLastCallDate(lastCall)
   const lastCallTime = formatRelativeTime(lastCallDate?.toISOString())
   const callDuration = isInCall ? formatCallDuration(currentCall) : null
-  const overdue = !isInCall && isOverdue(lastCall)
+  const overdue      = !isInCall && isOverdue(lastCall)
 
   return (
     <div
-      className={[
-        'assistant-card',
-        isInCall  ? 'in-call'  : '',
-        overdue   ? 'overdue'  : '',
-        isHidden  ? 'is-hidden' : '',
-      ].filter(Boolean).join(' ')}
+      className={['assistant-card', isInCall ? 'in-call' : '', overdue ? 'overdue' : ''].filter(Boolean).join(' ')}
       style={isInCall && orgColor ? { '--accent-color': orgColor } : {}}
     >
-      {/* Botão de ocultar / restaurar — canto superior esquerdo */}
-      <button
-        className={`card-visibility-btn ${isHidden ? 'restore' : 'hide'}`}
-        onClick={isHidden ? onRestore : onHide}
-        title={isHidden ? 'Exibir agente' : 'Ocultar agente'}
-      >
-        {isHidden ? '👁' : '✕'}
-      </button>
-
       {/* Badge de status */}
       <div className={`status-badge ${isInCall ? 'active' : 'idle'}`}>
         <span className="status-dot" />
@@ -76,7 +62,7 @@ export function AssistantCard({ assistant, onHide, onRestore, isHidden = false }
         <Avatar
           name={name}
           orgName={orgName}
-          isInCall={isInCall && !isHidden}
+          isInCall={isInCall}
           orgColor={orgColor}
           size={64}
         />
@@ -90,7 +76,7 @@ export function AssistantCard({ assistant, onHide, onRestore, isHidden = false }
 
       {/* Footer */}
       <div className="card-footer">
-        {isInCall && !isHidden ? (
+        {isInCall ? (
           <div className="call-active-info">
             <span className="call-timer-icon">📞</span>
             <span className="call-timer">{callDuration || 'conectando...'}</span>
@@ -106,9 +92,6 @@ export function AssistantCard({ assistant, onHide, onRestore, isHidden = false }
           </div>
         )}
       </div>
-
-      {/* Overlay de oculto */}
-      {isHidden && <div className="hidden-overlay"><span>Oculto</span></div>}
     </div>
   )
 }

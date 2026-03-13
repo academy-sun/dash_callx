@@ -1,19 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useVapiMonitor } from './hooks/useVapiMonitor'
 import { AssistantCard } from './components/AssistantCard'
 import { Header } from './components/Header'
 import './index.css'
-
-const STORAGE_KEY = 'vapi-hidden-agents'
-
-function loadHidden() {
-  try { return new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')) }
-  catch { return new Set() }
-}
-
-function saveHidden(set) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify([...set]))
-}
 
 function LoadingScreen() {
   return (
@@ -53,19 +42,9 @@ function EmptyScreen() {
 
 export default function App() {
   const { assistants, stats, isLoading, error, lastUpdate, refetch } = useVapiMonitor()
-  const [hiddenIds, setHiddenIds] = useState(loadHidden)
-  const [showHidden, setShowHidden] = useState(false)
 
-  // Persistir no localStorage sempre que mudar
-  useEffect(() => { saveHidden(hiddenIds) }, [hiddenIds])
-
-  const hideAgent = (id) =>
-    setHiddenIds(prev => new Set([...prev, id]))
-
-  const restoreAgent = (id) =>
-    setHiddenIds(prev => { const s = new Set(prev); s.delete(id); return s })
-
-  const restoreAll = () => setHiddenIds(new Set())
+  // Controla se agentes sem nenhuma chamada ficam ocultos
+  const [hideNoCalls, setHideNoCalls] = useState(true)
 
   if (isLoading && !assistants.length) return <LoadingScreen />
   if (error && !assistants.length) return <ErrorScreen error={error} onRetry={refetch} />
@@ -73,9 +52,14 @@ export default function App() {
 
   const inCallCount = assistants.filter(a => a.isInCall).length
 
-  // Separa visíveis dos ocultos
-  const visibleAssistants = assistants.filter(a => !hiddenIds.has(a.id))
-  const hiddenAssistants = assistants.filter(a => hiddenIds.has(a.id))
+  // Agentes sem nenhuma chamada registrada
+  const hasNoHistory = (a) => !a.lastCall && !a.isInCall
+
+  const visibleAssistants = hideNoCalls
+    ? assistants.filter(a => !hasNoHistory(a))
+    : assistants
+
+  const hiddenCount = assistants.filter(hasNoHistory).length
 
   return (
     <div className="app">
@@ -84,10 +68,9 @@ export default function App() {
         lastUpdate={lastUpdate}
         isLoading={isLoading}
         onRefresh={refetch}
-        hiddenCount={hiddenAssistants.length}
-        showHidden={showHidden}
-        onToggleShowHidden={() => setShowHidden(v => !v)}
-        onRestoreAll={restoreAll}
+        hiddenCount={hiddenCount}
+        hideNoCalls={hideNoCalls}
+        onToggleHideNoCalls={() => setHideNoCalls(v => !v)}
       />
 
       {inCallCount > 0 && (
@@ -97,38 +80,22 @@ export default function App() {
         </div>
       )}
 
-      {/* Grid principal — agentes visíveis */}
       <main className="dashboard-grid">
         {visibleAssistants.map(assistant => (
           <AssistantCard
             key={`${assistant.orgName}-${assistant.id}`}
             assistant={assistant}
-            onHide={() => hideAgent(assistant.id)}
           />
         ))}
-
-        {/* Seção de ocultos — mostrada inline quando "Ver ocultos" está ativo */}
-        {showHidden && hiddenAssistants.length > 0 && (
-          <>
-            {visibleAssistants.length > 0 && (
-              <div className="hidden-divider">
-                <span>— Agentes ocultos —</span>
-              </div>
-            )}
-            {hiddenAssistants.map(assistant => (
-              <AssistantCard
-                key={`hidden-${assistant.orgName}-${assistant.id}`}
-                assistant={assistant}
-                isHidden
-                onRestore={() => restoreAgent(assistant.id)}
-              />
-            ))}
-          </>
-        )}
       </main>
 
       <footer className="dashboard-footer">
         <span>Atualização automática a cada 15s</span>
+        {hideNoCalls && hiddenCount > 0 && (
+          <span className="footer-hidden-info">
+            {hiddenCount} sem histórico oculto{hiddenCount > 1 ? 's' : ''}
+          </span>
+        )}
         {isLoading && <span className="footer-loading">↻ atualizando...</span>}
       </footer>
     </div>
