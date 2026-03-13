@@ -1,80 +1,94 @@
 const express = require('express')
-const cors = require('cors')
-const path = require('path')
+const cors    = require('cors')
+const path    = require('path')
 
 const app = express()
 app.use(cors())
 app.use(express.json())
 
-// Carrega configuração das organizações
-// Prioridade: variável de ambiente VAPI_ORGS (para Render/produção) → orgs.config.js (para uso local)
+// ─── Carrega configuração das organizações ──────────────────────────────────
+// Prioridade: VAPI_ORGS (env, para Render) → orgs.config.js (local)
 let orgs = []
 
 if (process.env.VAPI_ORGS) {
   try {
     orgs = JSON.parse(process.env.VAPI_ORGS)
-    console.log(`✅ ${orgs.length} organização(ões) carregada(s) via variável de ambiente VAPI_ORGS`)
+    console.log(`✅ ${orgs.length} org(s) via VAPI_ORGS`)
   } catch (e) {
-    console.error('❌ Erro ao parsear VAPI_ORGS. Verifique se é um JSON válido.', e.message)
+    console.error('❌ Erro ao parsear VAPI_ORGS:', e.message)
   }
 } else {
   try {
     orgs = require('./orgs.config.js')
-    console.log(`✅ ${orgs.length} organização(ões) carregada(s) via orgs.config.js`)
+    console.log(`✅ ${orgs.length} org(s) via orgs.config.js`)
   } catch (e) {
-    console.warn('⚠️  Nenhuma configuração encontrada. Defina a variável VAPI_ORGS ou crie orgs.config.js')
+    console.warn('⚠️  Crie orgs.config.js ou defina VAPI_ORGS')
   }
 }
 
-// Função helper para chamar a API do VAPI
-// Usa o fetch nativo do Node.js 18+ (sem dependências externas)
+// ─── Helper de chamada à API VAPI ───────────────────────────────────────────
 async function fetchVapi(endpoint, apiKey) {
-  const url = `https://api.vapi.ai${endpoint}`
-
-  const response = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    }
+  const res = await fetch(`https://api.vapi.ai${endpoint}`, {
+    headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
   })
-
-  if (!response.ok) {
-    throw new Error(`VAPI API error ${response.status}: ${response.statusText}`)
-  }
-
-  return response.json()
+  if (!res.ok) throw new Error(`VAPI ${res.status}: ${res.statusText}`)
+  return res.json()
 }
 
-// Endpoint principal: retorna todos os assistentes com status
+// Busca silenciosa — retorna null em caso de erro (ex.: endpoint não disponível)
+async function fetchVapiSafe(endpoint, apiKey) {
+  try { return await fetchVapi(endpoint, apiKey) }
+  catch { return null }
+}
+
+// ─── Extrai limites de chamadas do objeto de org/plano do VAPI ───────────────
+function extractCallLimits(orgInfo) {
+  if (!orgInfo) return { callLimit: null, remainingConcurrentCalls: null }
+
+  // O VAPI pode devolver os limites em diferentes caminhos — tentamos todos
+  const limit =
+    orgInfo?.subscription?.concurrentCallLimit ??
+    orgInfo?.subscriptionLimit ??
+    orgInfo?.plan?.concurrentCallLimit ??
+    orgInfo?.concurrentCallLimit ??
+    null
+
+  const remaining =
+    orgInfo?.remainingConcurrentCalls ??
+    orgInfo?.subscription?.remainingConcurrentCalls ??
+    null
+
+  return { callLimit: limit, remainingConcurrentCalls: remaining }
+}
+
+// ─── Endpoint principal ──────────────────────────────────────────────────────
 app.get('/api/data', async (req, res) => {
   if (orgs.length === 0) {
     return res.json({
       timestamp: new Date().toISOString(),
-      assistants: [],
-      orgs: [],
-      error: 'Nenhuma organização configurada. Verifique orgs.config.js'
+      assistants: [], orgs: [],
+      error: 'Nenhuma organização configurada.'
     })
   }
 
   const results = await Promise.allSettled(
     orgs.map(async (org) => {
       try {
-        // Busca assistentes e chamadas em paralelo
-        const [assistants, calls] = await Promise.all([
+        // Busca assistentes, chamadas e info da org em paralelo
+        const [assistants, calls, orgInfo] = await Promise.all([
           fetchVapi('/assistant?limit=100', org.apiKey),
-          fetchVapi('/call?limit=100', org.apiKey)
+          fetchVapi('/call?limit=100', org.apiKey),
+          fetchVapiSafe('/org', org.apiKey)   // limites de plano — falha silenciosa
         ])
 
         const assistantList = Array.isArray(assistants) ? assistants : []
-        const callList = Array.isArray(calls) ? calls : []
+        const callList      = Array.isArray(calls)      ? calls      : []
 
-        // Chamadas em andamento agora
-        const activeCalls = callList.filter(c => c.status === 'in-progress')
-        const activeAssistantIds = new Set(
-          activeCalls.map(c => c.assistantId).filter(Boolean)
-        )
+        // Chamadas em andamento
+        const activeCalls        = callList.filter(c => c.status === 'in-progress')
+        const activeAssistantIds = new Set(activeCalls.map(c => c.assistantId).filter(Boolean))
 
-        // Última chamada concluída por assistente
+        // Última chamada CONCLUÍDA por assistente
         const lastCallByAssistant = {}
         for (const call of callList) {
           if (call.assistantId && call.status !== 'in-progress') {
@@ -84,73 +98,67 @@ app.get('/api/data', async (req, res) => {
           }
         }
 
-        // Métricas da organização
-        const totalCallsToday = callList.filter(c => {
-          const callDate = new Date(c.createdAt)
-          const today = new Date()
-          return callDate.toDateString() === today.toDateString()
-        }).length
+        // Limites de chamadas concorrentes
+        const { callLimit, remainingConcurrentCalls } = extractCallLimits(orgInfo)
+        const currentConcurrent = activeCalls.length
+        // Se não veio da API, estimamos o remaining pelo que vemos
+        const remaining = remainingConcurrentCalls ?? (callLimit != null ? callLimit - currentConcurrent : null)
 
         return {
-          orgName: org.name,
+          orgName:  org.name,
           orgColor: org.color || null,
-          totalCallsToday,
-          activeCount: activeCalls.length,
+          activeCount:          currentConcurrent,
+          callLimit:            callLimit,
+          remainingConcurrentCalls: remaining,
           assistants: assistantList.map(a => ({
-            id: a.id,
-            name: a.name || 'Sem nome',
-            orgName: org.name,
+            id:       a.id,
+            name:     a.name || 'Sem nome',
+            orgName:  org.name,
             orgColor: org.color || null,
             isInCall: activeAssistantIds.has(a.id),
             currentCall: activeCalls.find(c => c.assistantId === a.id) || null,
-            lastCall: lastCallByAssistant[a.id] || null,
-            createdAt: a.createdAt
+            lastCall:    lastCallByAssistant[a.id] || null,
+            createdAt:   a.createdAt,
+            // Dados de limite repassados por agente (nível da org)
+            orgActiveCount:  currentConcurrent,
+            orgCallLimit:    callLimit,
+            orgRemaining:    remaining,
           }))
         }
       } catch (err) {
-        console.error(`❌ Erro ao buscar dados de "${org.name}":`, err.message)
-        return {
-          orgName: org.name,
-          error: err.message,
-          assistants: []
-        }
+        console.error(`❌ "${org.name}":`, err.message)
+        return { orgName: org.name, error: err.message, assistants: [] }
       }
     })
   )
 
-  const processed = results.map(r =>
-    r.status === 'fulfilled' ? r.value : { error: r.reason?.message, assistants: [] }
-  )
-
+  const processed    = results.map(r => r.status === 'fulfilled' ? r.value : { error: r.reason?.message, assistants: [] })
   const allAssistants = processed.flatMap(r => r.assistants || [])
 
   res.json({
     timestamp: new Date().toISOString(),
-    orgs: processed.map(({ assistants, ...org }) => org),
+    orgs:      processed.map(({ assistants, ...org }) => org),
     assistants: allAssistants,
     stats: {
-      total: allAssistants.length,
-      active: allAssistants.filter(a => a.isInCall).length,
+      total:     allAssistants.length,
+      active:    allAssistants.filter(a => a.isInCall).length,
       orgsCount: orgs.length
     }
   })
 })
 
-// Endpoint de saúde
-app.get('/api/health', (req, res) => {
+// ─── Saúde ───────────────────────────────────────────────────────────────────
+app.get('/api/health', (_req, res) =>
   res.json({ status: 'ok', orgsLoaded: orgs.length, timestamp: new Date().toISOString() })
-})
+)
 
-// Serve o build do React em produção
+// ─── Produção: serve build do React ─────────────────────────────────────────
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, 'dist')))
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'))
-  })
+  app.get('*', (_req, res) => res.sendFile(path.join(__dirname, 'dist', 'index.html')))
 }
 
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
-  console.log(`🚀 VAPI Dashboard server rodando em http://localhost:${PORT}`)
-  console.log(`   Em dev, acesse: http://localhost:5173`)
+  console.log(`🚀 http://localhost:${PORT}  |  dev: http://localhost:5173`)
 })

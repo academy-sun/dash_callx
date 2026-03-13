@@ -53,7 +53,8 @@ export default function App() {
   const inCallCount = assistants.filter(a => a.isInCall).length
 
   // Agentes sem nenhuma chamada registrada
-  const hasNoHistory = (a) => !a.lastCall && !a.isInCall
+  // Usa APENAS lastCall (nunca isInCall) — evita flickering a cada poll
+  const hasNoHistory = (a) => !a.lastCall
 
   const visibleAssistants = hideNoCalls
     ? assistants.filter(a => !hasNoHistory(a))
