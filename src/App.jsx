@@ -8,7 +8,7 @@ function LoadingScreen() {
   return (
     <div className="loading-screen">
       <div className="loading-spinner" />
-      <p>Carregando agentes VAPI...</p>
+      <p>Carregando agentes MX3...</p>
     </div>
   )
 }
@@ -50,10 +50,10 @@ export default function App() {
   if (error && !assistants.length) return <ErrorScreen error={error} onRetry={refetch} />
   if (!assistants.length && !isLoading) return <EmptyScreen />
 
+  // inCallCount vem do roster estável (já processado no hook)
   const inCallCount = assistants.filter(a => a.isInCall).length
 
-  // Agentes sem nenhuma chamada registrada
-  // Usa APENAS lastCall (nunca isInCall) — evita flickering a cada poll
+  // Agentes sem nenhuma chamada registrada (APENAS lastCall, nunca isInCall)
   const hasNoHistory = (a) => !a.lastCall
 
   const visibleAssistants = hideNoCalls
@@ -65,7 +65,7 @@ export default function App() {
   return (
     <div className="app">
       <Header
-        stats={{ ...stats, active: inCallCount }}
+        stats={{ ...stats, active: inCallCount, total: assistants.length }}
         lastUpdate={lastUpdate}
         isLoading={isLoading}
         onRefresh={refetch}
@@ -77,7 +77,7 @@ export default function App() {
       {inCallCount > 0 && (
         <div className="active-banner">
           <span className="active-banner-dot" />
-          <strong>{inCallCount} agente{inCallCount > 1 ? 's' : ''} em chamada agora</strong>
+          <strong>{inCallCount} agente{inCallCount > 1 ? 's' : ''} ativo{inCallCount > 1 ? 's' : ''} agora</strong>
         </div>
       )}
 

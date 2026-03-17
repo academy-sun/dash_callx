@@ -41,6 +41,10 @@ async function fetchVapiSafe(endpoint, apiKey) {
   catch { return null }
 }
 
+// ─── Statuses que indicam que o agente está TRABALHANDO (ligação em curso) ───
+// Inclui tentativas (queued/ringing) além de chamadas ativas (in-progress)
+const ACTIVE_STATUSES = new Set(['queued', 'ringing', 'in-progress', 'forwarding'])
+
 // ─── Extrai limites de chamadas do objeto de org/plano do VAPI ───────────────
 function extractCallLimits(orgInfo) {
   if (!orgInfo) return { callLimit: null, remainingConcurrentCalls: null }
@@ -84,14 +88,14 @@ app.get('/api/data', async (req, res) => {
         const assistantList = Array.isArray(assistants) ? assistants : []
         const callList      = Array.isArray(calls)      ? calls      : []
 
-        // Chamadas em andamento
-        const activeCalls        = callList.filter(c => c.status === 'in-progress')
+        // ── Chamadas ativas: inclui tentativas (queued/ringing) e em progresso ──
+        const activeCalls        = callList.filter(c => ACTIVE_STATUSES.has(c.status))
         const activeAssistantIds = new Set(activeCalls.map(c => c.assistantId).filter(Boolean))
 
-        // Última chamada CONCLUÍDA por assistente
+        // ── Última chamada CONCLUÍDA por assistente (exclui todas as ativas) ──
         const lastCallByAssistant = {}
         for (const call of callList) {
-          if (call.assistantId && call.status !== 'in-progress') {
+          if (call.assistantId && !ACTIVE_STATUSES.has(call.status)) {
             if (!lastCallByAssistant[call.assistantId]) {
               lastCallByAssistant[call.assistantId] = call
             }
@@ -132,7 +136,7 @@ app.get('/api/data', async (req, res) => {
     })
   )
 
-  const processed    = results.map(r => r.status === 'fulfilled' ? r.value : { error: r.reason?.message, assistants: [] })
+  const processed     = results.map(r => r.status === 'fulfilled' ? r.value : { error: r.reason?.message, assistants: [] })
   const allAssistants = processed.flatMap(r => r.assistants || [])
 
   res.json({
@@ -160,5 +164,5 @@ if (process.env.NODE_ENV === 'production') {
 
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
-  console.log(`🚀 http://localhost:${PORT}  |  dev: http://localhost:5173`)
+  console.log(`🚀 MX3 Dashboard — http://localhost:${PORT}  |  dev: http://localhost:5173`)
 })

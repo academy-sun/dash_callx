@@ -1,6 +1,6 @@
 /* ===================================
-   VAPI Dashboard - Tema TV
-   Otimizado para telas grandes e TV
+   MX3 Dashboard - Tema TV
+   Cores baseadas na identidade MX3
    =================================== */
 
 *, *::before, *::after {
@@ -10,29 +10,48 @@
 }
 
 :root {
-  --bg-primary: #0d1117;
-  --bg-secondary: #161b22;
-  --bg-card: #1a2030;
-  --bg-card-active: #0a1f14;
-  --border: #2d333b;
-  --border-active: #22c55e;
-  --text-primary: #e6edf3;
-  --text-secondary: #8b949e;
-  --text-muted: #484f58;
-  --green: #22c55e;
-  --green-dim: #16a34a40;
-  --accent: #6366f1;
-  --red: #ef4444;
-  --red-dim: #ef444420;
-  --card-radius: 16px;
-  --shadow-card: 0 4px 20px rgba(0,0,0,0.4);
-  --shadow-active: 0 0 30px rgba(34, 197, 94, 0.25), 0 4px 20px rgba(0,0,0,0.5);
-  --shadow-overdue: 0 0 18px rgba(239, 68, 68, 0.15), 0 4px 20px rgba(0,0,0,0.4);
+  /* ── Backgrounds ── */
+  --bg-primary:     #080808;    /* Preto MX3 */
+  --bg-secondary:   #0d0d0d;
+  --bg-card:        #111111;
+  --bg-card-active: #1c0507;    /* Preto com leve toque vermelho */
+
+  /* ── Bordas ── */
+  --border:         #1e1e1e;
+  --border-active:  #e5001e;    /* Vermelho MX3 */
+
+  /* ── Texto ── */
+  --text-primary:   #f0f0f0;
+  --text-secondary: #888888;
+  --text-muted:     #444444;
+
+  /* ── Cores de estado ── */
+  --accent:         #e5001e;    /* Vermelho MX3 — cor principal da marca */
+  --accent-dim:     rgba(229,0,30,0.12);
+  --accent-glow:    rgba(229,0,30,0.25);
+
+  /* Mantém --green para agentes em chamada (semântico: ativo/trabalhando) */
+  /* No tema MX3 usamos o vermelho da marca para este estado também */
+  --green:          #e5001e;
+  --green-dim:      rgba(229,0,30,0.12);
+
+  /* Laranja para overdue (distinto do vermelho ativo) */
+  --red:            #f97316;
+  --red-dim:        rgba(249,115,22,0.12);
+
+  /* ── Raio e sombras ── */
+  --card-radius:    16px;
+  --shadow-card:    0 4px 24px rgba(0,0,0,0.7);
+  --shadow-active:  0 0 30px rgba(229,0,30,0.2), 0 4px 24px rgba(0,0,0,0.7);
+  --shadow-overdue: 0 0 18px rgba(249,115,22,0.12), 0 4px 24px rgba(0,0,0,0.6);
 }
 
 html, body {
   height: 100%;
-  background: var(--bg-primary);
+  /* Fundo preto com gradiente sutil vermelho — estilo do site MX3 */
+  background:
+    radial-gradient(ellipse at 15% 60%, rgba(140,0,18,0.18) 0%, transparent 55%),
+    var(--bg-primary);
   color: var(--text-primary);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   overflow: hidden;
@@ -57,7 +76,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 28px;
+  padding: 14px 28px;
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
@@ -75,6 +94,7 @@ html, body {
   justify-content: flex-end;
 }
 
+/* ── Logo MX3 ── */
 .logo {
   display: flex;
   align-items: center;
@@ -82,7 +102,8 @@ html, body {
 }
 
 .logo-icon {
-  font-size: 2rem;
+  font-size: 1.8rem;
+  filter: drop-shadow(0 0 8px rgba(229,0,30,0.6));
 }
 
 .logo-text {
@@ -92,18 +113,38 @@ html, body {
 
 .logo-title {
   font-size: 1.4rem;
-  font-weight: 700;
-  color: var(--text-primary);
+  font-weight: 900;
   letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+/* "M" branco, "X3" vermelho MX3 */
+.logo-m {
+  color: #ffffff;
+  font-weight: 900;
+}
+
+.logo-x3 {
+  color: var(--accent);
+  font-weight: 900;
+}
+
+.logo-dash {
+  color: var(--text-secondary);
+  font-weight: 400;
+  font-size: 0.8em;
+  letter-spacing: 0;
 }
 
 .logo-sub {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  letter-spacing: 0.5px;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  letter-spacing: 1px;
   text-transform: uppercase;
+  margin-top: 2px;
 }
 
+/* ── Stats pills ── */
 .header-stats {
   display: flex;
   gap: 12px;
@@ -121,8 +162,8 @@ html, body {
 }
 
 .stat-pill.active {
-  border-color: var(--green);
-  background: var(--green-dim);
+  border-color: var(--accent);
+  background: var(--accent-dim);
 }
 
 .stat-value {
@@ -142,7 +183,7 @@ html, body {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--green);
+  background: var(--accent);
   animation: pulse-dot 1.4s ease infinite;
   display: inline-block;
 }
@@ -185,7 +226,7 @@ html, body {
 .refresh-btn:hover {
   border-color: var(--accent);
   color: var(--accent);
-  background: rgba(99, 102, 241, 0.1);
+  background: var(--accent-dim);
 }
 
 .refresh-btn.loading .refresh-icon {
@@ -198,11 +239,11 @@ html, body {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 28px;
-  background: linear-gradient(90deg, rgba(34,197,94,0.12) 0%, transparent 100%);
-  border-bottom: 1px solid rgba(34,197,94,0.2);
-  font-size: 0.9rem;
-  color: var(--green);
+  padding: 8px 28px;
+  background: linear-gradient(90deg, rgba(229,0,30,0.14) 0%, transparent 100%);
+  border-bottom: 1px solid rgba(229,0,30,0.2);
+  font-size: 0.88rem;
+  color: var(--accent);
   flex-shrink: 0;
 }
 
@@ -210,9 +251,10 @@ html, body {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--green);
+  background: var(--accent);
   animation: pulse-dot 1s ease infinite;
   flex-shrink: 0;
+  box-shadow: 0 0 6px rgba(229,0,30,0.6);
 }
 
 /* ===== GRID PRINCIPAL ===== */
@@ -229,14 +271,14 @@ html, body {
 
 /* Scrollbar estilizada */
 .dashboard-grid::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 .dashboard-grid::-webkit-scrollbar-track {
   background: var(--bg-primary);
 }
 .dashboard-grid::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 3px;
+  background: #222;
+  border-radius: 2px;
 }
 
 /* ===== CARD DO ASSISTENTE ===== */
@@ -251,22 +293,22 @@ html, body {
   align-items: center;
   gap: 6px;
   position: relative;
-  transition: all 0.3s ease;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
   box-shadow: var(--shadow-card);
   cursor: default;
 }
 
 .assistant-card.in-call {
-  border-color: var(--accent-color, var(--green));
+  border-color: var(--accent-color, var(--accent));
   background: var(--bg-card-active);
   box-shadow: var(--shadow-active);
   animation: card-breathe 2s ease-in-out infinite;
 }
 
 .assistant-card:not(.in-call):hover {
-  border-color: var(--border);
+  border-color: #2a2a2a;
   transform: translateY(-2px);
-  box-shadow: 0 8px 28px rgba(0,0,0,0.5);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.7);
 }
 
 /* ===== MEDIDOR DE CHAMADAS CONCORRENTES ===== */
@@ -289,7 +331,7 @@ html, body {
 .call-limit-bar {
   width: 100%;
   height: 3px;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.06);
   border-radius: 2px;
   overflow: hidden;
 }
@@ -337,15 +379,15 @@ html, body {
 }
 
 .status-badge.active {
-  background: rgba(34, 197, 94, 0.15);
-  color: var(--green);
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  background: rgba(229, 0, 30, 0.15);
+  color: var(--accent);
+  border: 1px solid rgba(229, 0, 30, 0.3);
 }
 
 .status-badge.idle {
-  background: rgba(139, 148, 158, 0.1);
+  background: rgba(139, 148, 158, 0.08);
   color: var(--text-muted);
-  border: 1px solid rgba(139, 148, 158, 0.15);
+  border: 1px solid rgba(139, 148, 158, 0.12);
 }
 
 .status-dot {
@@ -355,8 +397,9 @@ html, body {
 }
 
 .status-badge.active .status-dot {
-  background: var(--green);
+  background: var(--accent);
   animation: pulse-dot 1s ease infinite;
+  box-shadow: 0 0 4px rgba(229,0,30,0.7);
 }
 
 .status-badge.idle .status-dot {
@@ -408,7 +451,7 @@ html, body {
   display: flex;
   align-items: center;
   gap: 4px;
-  color: var(--green);
+  color: var(--accent);
 }
 
 .call-timer-icon {
@@ -443,57 +486,7 @@ html, body {
   font-weight: 500;
 }
 
-/* ===== BOTÃO VISIBILIDADE NO CARD ===== */
-
-.card-visibility-btn {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 0.7rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.18s;
-  opacity: 0;
-  z-index: 2;
-}
-
-.assistant-card:hover .card-visibility-btn {
-  opacity: 1;
-}
-
-.card-visibility-btn.hide:hover {
-  background: rgba(239, 68, 68, 0.12);
-  border-color: rgba(239, 68, 68, 0.4);
-  color: var(--red);
-}
-
-.card-visibility-btn.restore {
-  opacity: 1;
-  background: rgba(99, 102, 241, 0.12);
-  border-color: rgba(99, 102, 241, 0.4);
-  color: var(--accent);
-  font-size: 0.85rem;
-}
-
-.card-visibility-btn.restore:hover {
-  background: rgba(99, 102, 241, 0.25);
-}
-
-/* ===== CONTROLES DE OCULTOS NO HEADER ===== */
-
-.hidden-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+/* ===== CONTROLES NO HEADER ===== */
 
 .toggle-btn {
   display: flex;
@@ -515,111 +508,26 @@ html, body {
 .toggle-btn:hover {
   border-color: var(--accent);
   color: var(--accent);
-  background: rgba(99, 102, 241, 0.08);
+  background: var(--accent-dim);
 }
 
 .toggle-btn.active {
   border-color: var(--accent);
-  background: rgba(99, 102, 241, 0.12);
+  background: var(--accent-dim);
   color: var(--accent);
 }
 
 .toggle-icon { font-size: 0.9rem; line-height: 1; }
 
-.hidden-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 5px;
-  background: var(--accent);
-  color: white;
-  border-radius: 100px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.restore-btn {
-  padding: 7px 14px;
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 100px;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 0.75rem;
-  font-family: inherit;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-
-.restore-btn:hover {
-  border-color: var(--green);
-  color: var(--green);
-  background: rgba(34, 197, 94, 0.06);
-}
-
-/* ===== CARD OCULTO (exibido na seção "Ver ocultos") ===== */
-
-.assistant-card.is-hidden {
-  opacity: 0.45;
-  filter: grayscale(0.6);
-  border-style: dashed;
-  position: relative;
-}
-
-.assistant-card.is-hidden:hover {
-  opacity: 0.7;
-  filter: grayscale(0.2);
-}
-
-.hidden-overlay {
-  position: absolute;
-  inset: 0;
-  border-radius: var(--card-radius);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-}
-
-.hidden-overlay span {
-  padding: 4px 12px;
-  background: rgba(0,0,0,0.55);
-  color: var(--text-muted);
-  border-radius: 100px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-}
-
-/* ===== DIVISOR DOS OCULTOS ===== */
-
-.hidden-divider {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 0 4px;
-  color: var(--text-muted);
-  font-size: 0.75rem;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  border-top: 1px dashed var(--border);
-  margin-top: 4px;
-}
-
 /* ===== CARD OVERDUE (mais de 2 dias sem chamada) ===== */
 
 .assistant-card.overdue {
-  border-color: rgba(239, 68, 68, 0.3);
-  box-shadow: 0 0 18px rgba(239, 68, 68, 0.12), 0 4px 20px rgba(0,0,0,0.4);
+  border-color: rgba(249, 115, 22, 0.25);
+  box-shadow: var(--shadow-overdue);
 }
 
 .assistant-card.overdue:hover {
-  border-color: rgba(239, 68, 68, 0.55);
+  border-color: rgba(249, 115, 22, 0.5);
 }
 
 .overdue-text .last-call-label {
@@ -733,17 +641,18 @@ html, body {
 
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.85); }
+  50% { opacity: 0.4; transform: scale(0.8); }
 }
 
+/* Respira com vermelho MX3 */
 @keyframes card-breathe {
-  0%, 100% { box-shadow: 0 0 20px rgba(34,197,94,0.15), 0 4px 20px rgba(0,0,0,0.4); }
-  50% { box-shadow: 0 0 35px rgba(34,197,94,0.3), 0 4px 24px rgba(0,0,0,0.5); }
+  0%, 100% { box-shadow: 0 0 20px rgba(229,0,30,0.15), 0 4px 24px rgba(0,0,0,0.7); }
+  50%       { box-shadow: 0 0 40px rgba(229,0,30,0.30), 0 4px 28px rgba(0,0,0,0.8); }
 }
 
 @keyframes spin {
   from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  to   { transform: rotate(360deg); }
 }
 
 @keyframes phone-ring {
@@ -757,20 +666,20 @@ html, body {
 
 @keyframes fade-pulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  50% { opacity: 0.3; }
 }
 
 /* ===== RESPONSIVO PARA TV ===== */
 
 @media (min-width: 1920px) {
   .dashboard-grid {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+    gap: 14px;
     padding: 18px 28px;
   }
 
-  .logo-title { font-size: 1.6rem; }
-  .stat-value { font-size: 1.5rem; }
+  .logo-title  { font-size: 1.6rem; }
+  .stat-value  { font-size: 1.5rem; }
   .assistant-name { font-size: 0.85rem; }
 }
 

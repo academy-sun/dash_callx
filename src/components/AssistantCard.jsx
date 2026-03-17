@@ -15,14 +15,14 @@ function isOverdue(lastCall) {
 
 function formatRelativeTime(dateStr) {
   if (!dateStr) return null
-  const diffMs  = Date.now() - new Date(dateStr).getTime()
+  const diffMs   = Date.now() - new Date(dateStr).getTime()
   const diffMin  = Math.floor(diffMs / 60000)
   const diffHour = Math.floor(diffMin / 60)
   const diffDay  = Math.floor(diffHour / 24)
 
-  if (diffMin  < 1)  return 'agora mesmo'
-  if (diffMin  < 60) return `há ${diffMin}min`
-  if (diffHour < 24) return `há ${diffHour}h${diffMin % 60 > 0 ? ` ${diffMin % 60}min` : ''}`
+  if (diffMin  < 1)   return 'agora mesmo'
+  if (diffMin  < 60)  return `há ${diffMin}min`
+  if (diffHour < 24)  return `há ${diffHour}h${diffMin % 60 > 0 ? ` ${diffMin % 60}min` : ''}`
   if (diffDay  === 1) return 'ontem'
   return `há ${diffDay} dias`
 }
@@ -35,20 +35,29 @@ function formatCallDuration(call) {
   return `${min}:${sec.toString().padStart(2, '0')}`
 }
 
+// ── Label e ícone por status de chamada ───────────────────────────────────────
+function getCallStatusInfo(status) {
+  switch (status) {
+    case 'queued':     return { label: 'Na Fila',      icon: '⏳', timer: 'aguardando...' }
+    case 'ringing':    return { label: 'Discando',     icon: '📱', timer: 'discando...'   }
+    case 'forwarding': return { label: 'Transferindo', icon: '🔀', timer: 'transferindo...' }
+    default:           return { label: 'Em Chamada',   icon: '📞', timer: null }
+  }
+}
+
 // ── Medidor de chamadas concorrentes da organização ───────────────────────────
 function CallLimitMeter({ active, limit, remaining }) {
-  // Se não temos nenhuma informação, não renderiza
   if (active == null) return null
 
   const hasLimit = limit != null && limit > 0
   const pct      = hasLimit ? Math.min((active / limit) * 100, 100) : null
 
-  // Cor baseada na saturação
+  // Cor baseada na saturação (semântica: verde = ok, amarelo = atenção, vermelho = crítico)
   const color = !hasLimit
-    ? '#6366f1'                          // sem info de limite → roxo neutro
-    : pct >= 90 ? '#ef4444'             // ≥ 90% → vermelho
-    : pct >= 60 ? '#f59e0b'             // ≥ 60% → amarelo
-    : '#22c55e'                          // < 60% → verde
+    ? 'var(--accent)'
+    : pct >= 90 ? '#ef4444'
+    : pct >= 60 ? '#f59e0b'
+    : '#22c55e'
 
   const label = hasLimit
     ? `${active}/${limit}`
@@ -69,7 +78,6 @@ function CallLimitMeter({ active, limit, remaining }) {
             />
           </div>
         ) : (
-          // Sem limite definido: apenas pontinhos indicativos
           <div className="call-limit-dots">
             {Array.from({ length: Math.min(active, 8) }).map((_, i) => (
               <span key={i} className="call-limit-dot" style={{ background: color }} />
@@ -93,15 +101,18 @@ export function AssistantCard({ assistant }) {
     orgActiveCount, orgCallLimit, orgRemaining
   } = assistant
 
+  const callStatus   = currentCall?.status
+  const statusInfo   = isInCall ? getCallStatusInfo(callStatus) : null
+
   const lastCallDate = getLastCallDate(lastCall)
   const lastCallTime = formatRelativeTime(lastCallDate?.toISOString())
-  const callDuration = isInCall ? formatCallDuration(currentCall) : null
+  const callDuration = (isInCall && callStatus === 'in-progress') ? formatCallDuration(currentCall) : null
   const overdue      = !isInCall && isOverdue(lastCall)
 
   return (
     <div
       className={['assistant-card', isInCall ? 'in-call' : '', overdue ? 'overdue' : ''].filter(Boolean).join(' ')}
-      style={isInCall && orgColor ? { '--accent-color': orgColor } : {}}
+      style={{ '--accent-color': (isInCall && orgColor) ? orgColor : 'var(--accent)' }}
     >
       {/* Medidor de chamadas concorrentes — canto superior esquerdo */}
       <CallLimitMeter
@@ -113,7 +124,7 @@ export function AssistantCard({ assistant }) {
       {/* Badge de status — canto superior direito */}
       <div className={`status-badge ${isInCall ? 'active' : 'idle'}`}>
         <span className="status-dot" />
-        {isInCall ? 'Em Chamada' : 'Disponível'}
+        {isInCall ? statusInfo.label : 'Disponível'}
       </div>
 
       {/* Avatar */}
@@ -137,8 +148,10 @@ export function AssistantCard({ assistant }) {
       <div className="card-footer">
         {isInCall ? (
           <div className="call-active-info">
-            <span className="call-timer-icon">📞</span>
-            <span className="call-timer">{callDuration || 'conectando...'}</span>
+            <span className="call-timer-icon">{statusInfo.icon}</span>
+            <span className="call-timer">
+              {callDuration || statusInfo.timer || 'conectando...'}
+            </span>
           </div>
         ) : (
           <div className={`last-call-info ${overdue ? 'overdue-text' : ''}`}>

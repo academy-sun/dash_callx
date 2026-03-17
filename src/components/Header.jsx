@@ -11,10 +11,14 @@ export function Header({
     <header className="dashboard-header">
       <div className="header-left">
         <div className="logo">
-          <span className="logo-icon">🤖</span>
+          {/* Logo MX3 — estilo do site oficial */}
+          <span className="logo-icon">⚡</span>
           <div className="logo-text">
-            <span className="logo-title">VAPI Dashboard</span>
-            <span className="logo-sub">Monitor de Agentes</span>
+            <span className="logo-title">
+              <span className="logo-m">M</span><span className="logo-x3">X3</span>
+              <span className="logo-dash"> Dashboard</span>
+            </span>
+            <span className="logo-sub">Monitor de Agentes IA</span>
           </div>
         </div>
       </div>
