@@ -108,26 +108,62 @@ app.get('/api/data', async (req, res) => {
         // Se não veio da API, estimamos o remaining pelo que vemos
         const remaining = remainingConcurrentCalls ?? (callLimit != null ? callLimit - currentConcurrent : null)
 
+        // ── Cálculos Diários (Hoje) ──
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const dailyStats = {
+          total: 0,
+          answered: 0
+        };
+
+        callList.forEach(c => {
+          const callDate = new Date(c.createdAt || c.startedAt);
+          if (callDate >= today) {
+            dailyStats.total++;
+            // Status que indicam que a chamada foi atendida (pode variar conforme a API, usualmente 'completed' ou 'ended' com duração > 0)
+            if (c.duration > 0 || c.endedReason === 'assistant-ended-call' || c.endedReason === 'customer-ended-call') {
+              dailyStats.answered++;
+            }
+          }
+        });
+
         return {
           orgName:  org.name,
           orgColor: org.color || null,
           activeCount:          currentConcurrent,
           callLimit:            callLimit,
           remainingConcurrentCalls: remaining,
-          assistants: assistantList.map(a => ({
-            id:       a.id,
-            name:     a.name || 'Sem nome',
-            orgName:  org.name,
-            orgColor: org.color || null,
-            isInCall: activeAssistantIds.has(a.id),
-            currentCall: activeCalls.find(c => c.assistantId === a.id) || null,
-            lastCall:    lastCallByAssistant[a.id] || null,
-            createdAt:   a.createdAt,
-            // Dados de limite repassados por agente (nível da org)
-            orgActiveCount:  currentConcurrent,
-            orgCallLimit:    callLimit,
-            orgRemaining:    remaining,
-          }))
+          assistants: assistantList.map(a => {
+            // Filtra chamadas específicas deste assistente para estatísticas diárias
+            const assistantCalls = callList.filter(c => c.assistantId === a.id);
+            const aTodayStats = { total: 0, answered: 0 };
+            assistantCalls.forEach(c => {
+              const callDate = new Date(c.createdAt || c.startedAt);
+              if (callDate >= today) {
+                aTodayStats.total++;
+                if (c.duration > 0 || c.endedReason === 'assistant-ended-call' || c.endedReason === 'customer-ended-call') {
+                  aTodayStats.answered++;
+                }
+              }
+            });
+
+            return {
+              id:       a.id,
+              name:     a.name || 'Sem nome',
+              orgName:  org.name,
+              orgColor: org.color || null,
+              isInCall: activeAssistantIds.has(a.id),
+              currentCall: activeCalls.find(c => c.assistantId === a.id) || null,
+              lastCall:    lastCallByAssistant[a.id] || null,
+              createdAt:   a.createdAt,
+              dailyStats:  aTodayStats,
+              // Dados de limite repassados por agente (nível da org)
+              orgActiveCount:  currentConcurrent,
+              orgCallLimit:    callLimit,
+              orgRemaining:    remaining,
+            };
+          })
         }
       } catch (err) {
         console.error(`❌ "${org.name}":`, err.message)

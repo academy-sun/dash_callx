@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useVapiMonitor } from './hooks/useVapiMonitor'
 import { AssistantCard } from './components/AssistantCard'
 import { Header } from './components/Header'
+import { InactivityScreen } from './components/InactivityScreen'
 import './index.css'
 
 function LoadingScreen() {
@@ -45,6 +46,7 @@ export default function App() {
 
   // Controla se agentes sem nenhuma chamada ficam ocultos
   const [hideNoCalls, setHideNoCalls] = useState(true)
+  const [activeTab, setActiveTab] = useState('monitor') // 'monitor' ou 'inactivity'
 
   if (isLoading && !assistants.length) return <LoadingScreen />
   if (error && !assistants.length) return <ErrorScreen error={error} onRetry={refetch} />
@@ -74,21 +76,42 @@ export default function App() {
         onToggleHideNoCalls={() => setHideNoCalls(v => !v)}
       />
 
-      {inCallCount > 0 && (
-        <div className="active-banner">
-          <span className="active-banner-dot" />
-          <strong>{inCallCount} agente{inCallCount > 1 ? 's' : ''} ativo{inCallCount > 1 ? 's' : ''} agora</strong>
-        </div>
-      )}
+      <nav className="tab-navigation">
+        <button 
+          className={`tab-btn ${activeTab === 'monitor' ? 'active' : ''}`}
+          onClick={() => setActiveTab('monitor')}
+        >
+          Monitor de Agentes
+        </button>
+        <button 
+          className={`tab-btn ${activeTab === 'inactivity' ? 'active' : ''}`}
+          onClick={() => setActiveTab('inactivity')}
+        >
+          Inatividade (+24h)
+        </button>
+      </nav>
 
-      <main className="dashboard-grid">
-        {visibleAssistants.map(assistant => (
-          <AssistantCard
-            key={`${assistant.orgName}-${assistant.id}`}
-            assistant={assistant}
-          />
-        ))}
-      </main>
+      {activeTab === 'monitor' ? (
+        <>
+          {inCallCount > 0 && (
+            <div className="active-banner">
+              <span className="active-banner-dot" />
+              <strong>{inCallCount} agente{inCallCount > 1 ? 's' : ''} ativo{inCallCount > 1 ? 's' : ''} agora</strong>
+            </div>
+          )}
+
+          <main className="dashboard-grid">
+            {visibleAssistants.map(assistant => (
+              <AssistantCard
+                key={`${assistant.orgName}-${assistant.id}`}
+                assistant={assistant}
+              />
+            ))}
+          </main>
+        </>
+      ) : (
+        <InactivityScreen assistants={assistants} />
+      )}
 
       <footer className="dashboard-footer">
         <span>Atualização automática a cada 15s</span>

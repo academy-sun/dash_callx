@@ -142,6 +142,18 @@ export function AssistantCard({ assistant }) {
       <div className="card-info">
         <h3 className="assistant-name">{name}</h3>
         <span className="org-name">{orgName}</span>
+        
+        {/* Estatísticas Diárias */}
+        <div className="daily-stats">
+          <div className="stat-item" title="Chamadas realizadas hoje">
+            <span className="stat-icon-mini">📞</span>
+            <span className="stat-value-mini">{assistant.dailyStats?.total || 0}</span>
+          </div>
+          <div className="stat-item" title="Chamadas atendidas hoje">
+            <span className="stat-icon-mini">✅</span>
+            <span className="stat-value-mini">{assistant.dailyStats?.answered || 0}</span>
+          </div>
+        </div>
       </div>
 
       {/* Footer */}
